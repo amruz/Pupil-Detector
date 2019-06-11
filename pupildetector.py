@@ -72,42 +72,46 @@ class PupilDetector(object):
 		for j,keypoints in enumerate(main_key_points):
 		        for i, keypoint in enumerate(keypoints):
 		            area = "{0:.2f}".format(2*3.14*(keypoint.size/2)*(keypoint.size/2))
-		            keypoint = cv2.KeyPoint(keypoint.pt[0] + eyes_pos[j][0] , keypoint.pt[1] + eyes_pos[j][1], keypoint.size, keypoint.angle, keypoint.response, keypoint.octave, keypoint.class_id)
+		            keypoint = cv2.KeyPoint(keypoint.pt[0] + eyes_pos[j][0] , keypoint.pt[1] + eyes_pos[j][1] , keypoint.size, keypoint.angle, keypoint.response, keypoint.octave, keypoint.class_id)
 		            cv2.circle(image, (int(keypoint.pt[0]), int(keypoint.pt[1])), 1, (0, 0, 255), -1)
 		            cv2.putText(image, str(area), (int(keypoint.pt[0]), int(keypoint.pt[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 		            cv2.circle(image, (int(keypoint.pt[0]), int(keypoint.pt[1])), int(keypoint.size/2), (0, 0, 255), 1)
-		cv2.imshow('Result',image)
+		return image
 
 
-	def DetectPupil(self):
+	def DetectPupil(self,frame):
+		
+		img = cv2.rotate(frame, 2)
+		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		eyes_pos, eyes = self.DetectEyes(gray)
+		main_key_points = []
+		for i,eye in enumerate(eyes):
+			blur = cv2.bilateralFilter(eye,5,75,75)
+			th3 = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,7,2)
+			params = cv2.SimpleBlobDetector_Params()
+			detector = cv2.SimpleBlobDetector_create(params)      
+			inverted_img = cv2.dilate(th3, None, iterations=2) #2
+			inverted_img = cv2.erode(inverted_img, None, iterations=3) #1   # Detect blobs.
+			keypoints = detector.detect(inverted_img)
+			main_key_points.append(keypoints)
+		detected_image = self.DrawDetections(img, main_key_points, eyes_pos)
+		return (len(main_key_points), detected_image)
+
+	def ReadFrames(self):
 		cap = cv2.VideoCapture(self._input_video)
 		#cap = cv2.VideoCapture(0)
 		while 1:
-			ret, img = cap.read()
+			ret, frame = cap.read()
 			if (ret == False):
 				return
-			img = cv2.rotate(img, 2)
-			gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-			eyes_pos, eyes = self.DetectEyes(gray) 
-		        #thresholding
-			main_key_points = []
-			for i,eye in enumerate(eyes):
-				blur = cv2.bilateralFilter(eye,5,75,75)
-				th3 = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,7,2)
-				params = cv2.SimpleBlobDetector_Params()
-				detector = cv2.SimpleBlobDetector_create(params)      
-				inverted_img = cv2.dilate(th3, None, iterations=2) #2
-				inverted_img = cv2.erode(inverted_img, None, iterations=3) #1   # Detect blobs.
-				keypoints = detector.detect(inverted_img)
-				main_key_points.append(keypoints)
-			self.DrawDetections(img, main_key_points, eyes_pos) 
+			_, result = self.DetectPupil(frame)
+			cv2.imshow('Detected Image', result)
 			k = cv2.waitKey(30) & 0xff
 			if k == 27:
 				break
-		
-
 		cap.release()
 		cv2.destroyAllWindows()
+
 
 
 def main(argv):
@@ -117,6 +121,6 @@ def main(argv):
 	args = parser.parse_args()
 	print (args)
 	pupildetect = PupilDetector(args.input)
-	pupildetect.DetectPupil()
+	pupildetect.ReadFrames()
 
 main(sys.argv[1:])
