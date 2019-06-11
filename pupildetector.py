@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import cv2
 import dlib
+import math
 
 class PupilDetector(object):
 	"""
@@ -53,17 +54,25 @@ class PupilDetector(object):
 		        shape = self._predictor(gray_img, faceRect)
 		        shape = self.shape_to_np(shape)
 		        #print (shape)
-		        eyes.append(gray_img[ shape[1][1]-20: (shape[0][1]+10), shape[1][0]: (shape[0][0])])
-		        eyes_pos.append([shape[1][0], shape[1][1]])
-		        eyes.append(gray_img[ shape[2][1]-20: (shape[3][1]+10), shape[2][0]: (shape[3][0])])
-		        eyes_pos.append([shape[2][0], shape[2][1]])
+		        # eyes.append(gray_img[ shape[1][1]-20: (shape[0][1]+10), shape[1][0]: (shape[0][0])])
+		        # eyes_pos.append([shape[1][0], shape[1][1]])
+		        # eyes.append(gray_img[ shape[2][1]-20: (shape[3][1]+10), shape[2][0]: (shape[3][0])])
+		        # eyes_pos.append([shape[2][0], shape[2][1]])
+		        left_eye_distance = math.sqrt(math.pow((shape[0][1] - shape[1][1]),2) + math.pow((shape[0][0] - shape[1][0]),2))
+		        right_eye_distance = math.sqrt(math.pow((shape[2][0] - shape[3][0]),2) + math.pow((shape[2][1] - shape[3][1]),2))
+
+		        eyes.append(gray_img[shape[1][1]- int(left_eye_distance / 3): shape[0][1] + int(left_eye_distance / 3), shape[1][0] + int(left_eye_distance / 5): (shape[0][0] - int(left_eye_distance / 5))])
+		        eyes_pos.append([shape[1][0] +int(left_eye_distance /  5), shape[1][1] - int(left_eye_distance / 3)])
+		        eyes.append(gray_img[shape[2][1]-int(right_eye_distance / 3) : shape[3][1] + int(right_eye_distance / 3), shape[2][0] + int(right_eye_distance / 5):int(shape[3][0] - int(right_eye_distance / 5))])
+		        eyes_pos.append([shape[2][0] +int(right_eye_distance / 5), shape[2][1] - int(right_eye_distance / 3)])
+
 		return (eyes_pos,eyes)
 
 	def DrawDetections(self, image, main_key_points, eyes_pos):
 		for j,keypoints in enumerate(main_key_points):
 		        for i, keypoint in enumerate(keypoints):
 		            area = "{0:.2f}".format(2*3.14*(keypoint.size/2)*(keypoint.size/2))
-		            keypoint = cv2.KeyPoint(keypoint.pt[0] + eyes_pos[j][0] , keypoint.pt[1] + eyes_pos[j][1] - 20, keypoint.size, keypoint.angle, keypoint.response, keypoint.octave, keypoint.class_id)
+		            keypoint = cv2.KeyPoint(keypoint.pt[0] + eyes_pos[j][0] , keypoint.pt[1] + eyes_pos[j][1], keypoint.size, keypoint.angle, keypoint.response, keypoint.octave, keypoint.class_id)
 		            cv2.circle(image, (int(keypoint.pt[0]), int(keypoint.pt[1])), 1, (0, 0, 255), -1)
 		            cv2.putText(image, str(area), (int(keypoint.pt[0]), int(keypoint.pt[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 		            cv2.circle(image, (int(keypoint.pt[0]), int(keypoint.pt[1])), int(keypoint.size/2), (0, 0, 255), 1)
