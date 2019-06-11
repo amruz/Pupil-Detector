@@ -3,16 +3,19 @@ import pupildetector
 
 class TestPupilDetector(unittest.TestCase):
 
-	def test_DetectEyeSuccess(self):
+	def __init__(self,img_file):
+		self._test_img = cv2.imread(img_file,1)
+
+	def test_detectPupil(self):
 		self.assertEqual(0,0)
 
-	def test_DetectEyeFail(self):
+	def test_detectPupil(self):
 		self.assertEqual(0,0)
 
-	def test_Extract(self):
+	def test_detectEyes(self):
 		self.assertEqual(0,0)
 
-	def test_Some(self):
+	def test_shapeToNumpy(self):
 		self.assertEqual(0,0)
 
 
