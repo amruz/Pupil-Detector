@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-from pupildetector import PupilDetector
+from pupil_detector import PupilDetector
 
 def main(argv):
 	inputfile = ''

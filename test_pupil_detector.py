@@ -1,6 +1,6 @@
 import unittest
 import cv2
-from pupildetector import PupilDetector
+from pupil_detector import PupilDetector
 
 class TestPupilDetector(unittest.TestCase):
 	"""

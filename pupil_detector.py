@@ -15,7 +15,7 @@ class PupilDetector(object):
 		# the face cascade classifier
 		self._face_cascade   = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 		# eye feature predictor
-		self._predictor      = dlib.shape_predictor('shape_predictor_5_face_landmarks.dat')
+		self._predictor      = dlib.shape_predictor('eye_predictor_landmarks.dat')
 		# blob detector
 		self._detector       = cv2.SimpleBlobDetector_create() 
 		# eye patch positions in each frame
