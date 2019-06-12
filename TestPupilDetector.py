@@ -11,7 +11,7 @@ class TestPupilDetector(unittest.TestCase):
 		Initialize params 
 		"""
 		self.pupil_detector  = PupilDetector()
-		self._test_img       = cv2.imread('test1.png',1)
+		self._test_img       = cv2.imread('test.png',1)
 		self._test_fail_img  = cv2.imread('test_fail.png',1)
 
 	def test_detectPupil(self):

@@ -11,24 +11,25 @@ class PupilDetector(object):
 	"""
 	def __init__(self, input_video = ""):
 		# input video
-		self._input_video = input_video
-		# face ca
-		self._face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-
-		self._predictor = dlib.shape_predictor('shape_predictor_5_face_landmarks.dat')
-
-		self._eyes_pos = []
+		self._input_video    = input_video
+		# the face cascade classifier
+		self._face_cascade   = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+		# eye feature predictor
+		self._predictor      = dlib.shape_predictor('shape_predictor_5_face_landmarks.dat')
+		# blob detector
+		self._detector       = cv2.SimpleBlobDetector_create() 
+		# eye patch positions in each frame
+		self._eyes_pos       = []
 		# array of keypoints of the eye patches
 		self.main_key_points = []
 
-		self._detector = cv2.SimpleBlobDetector_create() 
 
 	def shapeToNumpy(self, shape, dtype="int"):
 		"""Convert shape type to numpy array.
 
     	Keyword arguments:
-    	shape -- ??????????????????????????????????????
-    	dtype --
+    	shape -- input shape
+    	dtype -- type of array
 
     	Return:
 		coords -- numpy array
@@ -67,10 +68,12 @@ class PupilDetector(object):
 		        left_eye_distance = math.sqrt(math.pow((shape[0][1] - shape[1][1]), 2) + math.pow((shape[0][0] - shape[1][0]), 2))
 		        right_eye_distance = math.sqrt(math.pow((shape[2][0] - shape[3][0]), 2) + math.pow((shape[2][1] - shape[3][1]), 2))
 
-		        eyes.append(gray_img[shape[1][1]- int(left_eye_distance / 3): shape[0][1] + int(left_eye_distance / 3), shape[1][0] + int(left_eye_distance / 5): (shape[0][0] - int(left_eye_distance / 5))])
-		        self._eyes_pos.append([shape[1][0] +int(left_eye_distance /  5), shape[1][1] - int(left_eye_distance / 3)])
-		        eyes.append(gray_img[shape[2][1]-int(right_eye_distance / 3) : shape[3][1] + int(right_eye_distance / 3), shape[2][0] + int(right_eye_distance / 5):int(shape[3][0] - int(right_eye_distance / 5))])
-		        self._eyes_pos.append([shape[2][0] +int(right_eye_distance / 5), shape[2][1] - int(right_eye_distance / 3)])
+		        eyes.append(gray_img[shape[1][1]- int(left_eye_distance / 3): shape[0][1] + int(left_eye_distance / 3), 
+		        	shape[1][0] + int(left_eye_distance / 5): (shape[0][0] - int(left_eye_distance / 5))])
+		        self._eyes_pos.append([shape[1][0] + int(left_eye_distance / 5), shape[1][1] - int(left_eye_distance / 3)])
+		        eyes.append(gray_img[shape[2][1]- int(right_eye_distance / 3) : shape[3][1] + int(right_eye_distance / 3), 
+		        	shape[2][0] + int(right_eye_distance / 5):int(shape[3][0] - int(right_eye_distance / 5))])
+		        self._eyes_pos.append([shape[2][0] + int(right_eye_distance / 5), shape[2][1] - int(right_eye_distance / 3)])
 		return (eyes)
 
 	def drawDetections(self, image):
@@ -82,11 +85,12 @@ class PupilDetector(object):
     	Return:
 		image -- image drawn with detected pupil center and area 
     	"""
-		for j,keypoints in enumerate(self.main_key_points):
+		for j, keypoints in enumerate(self.main_key_points):
 		        for i, keypoint in enumerate(keypoints):
 		        	#computing the area of the detected pupil
-		            area = "{0:.2f}".format(3.14*math.pow(keypoint.size,2))
-		            keypoint = cv2.KeyPoint(keypoint.pt[0] + self._eyes_pos[j][0] , keypoint.pt[1] + self._eyes_pos[j][1] , keypoint.size, keypoint.angle, keypoint.response, keypoint.octave, keypoint.class_id)
+		            area = "{0:.2f}".format(math.pi * math.pow(keypoint.size/2, 2))
+		            keypoint = cv2.KeyPoint(keypoint.pt[0] + self._eyes_pos[j][0] , keypoint.pt[1] + self._eyes_pos[j][1] , 
+		            	keypoint.size, keypoint.angle, keypoint.response, keypoint.octave, keypoint.class_id)
 		            cv2.circle(image, (int(keypoint.pt[0]), int(keypoint.pt[1])), 1, (0, 0, 255), -1)
 		            cv2.putText(image, str(area), (int(keypoint.pt[0]), int(keypoint.pt[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 		            cv2.circle(image, (int(keypoint.pt[0]), int(keypoint.pt[1])), int(keypoint.size/2), (0, 0, 255), 1)
@@ -101,7 +105,6 @@ class PupilDetector(object):
 
     	Return:
 		detected_image -- the image frame with pupil detection drawn
-		len(main_key_points) -- the length of the main_key_points array
     	"""
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		# detect eyes
@@ -120,19 +123,20 @@ class PupilDetector(object):
 			keypoints = self._detector.detect(inverted_img)
 			self.main_key_points.append(keypoints)
 		detected_image = self.drawDetections(frame)
-		return (len(self.main_key_points), detected_image)
+		return (detected_image)
 
 	def readFrames(self):
-		"""To read each frames of the input video
+		"""
+		To read each frames of the input video
     	"""
 		cap = cv2.VideoCapture(self._input_video)
 		while 1:
 			ret, frame = cap.read()
-			# if no frames seen
+			# if no frames
 			if (ret == False):
 				return
 			frame = cv2.rotate(frame, 2)
-			_ , result = self.detectPupil(frame)
+			result = self.detectPupil(frame)
 			cv2.imshow('Detected Image', result)
 			k = cv2.waitKey(30) & 0xff
 			if k == 27:
