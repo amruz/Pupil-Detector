@@ -20,12 +20,14 @@ The detections are missed mostly in the cases where the pupil is partially cover
 The execution time of the approach can be optimized. The pupil partial occlusion by the eye lid cases coudl be handled by some dynamic filtering approaches or by optimizing a non -linear least squares approach to fit a circle over the occluded pupil regions. The tracking of the pupil could also improve the performance. Deep learning approaches are one of the obvious ways to explore,
 
 
-###Dependencies
-python 3.6
-dlib
-OpenCV
+##Dependencies
 
-###Run
+* python 3.6
+* dlib
+* OpenCV
+
+#Run
+
 python main.py <input_video>
 
 
